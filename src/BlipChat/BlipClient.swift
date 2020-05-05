@@ -12,8 +12,26 @@ import UIKit
 /**
  SDK to easly add BLiP conversations in your iOS app
  */
+
 @objc public class BlipClient : NSObject{
     
+    
+    @objc public static func openBlipThreadOnlyViewController(appKey: String, options:BlipOptions = BlipOptions(),_ isPush: Bool = true ) throws -> ThreadViewController {
+          // Validate Options and ApiKey
+          do {
+              try validateSdkConfiguration(identifier: appKey, options: options)
+          } catch {
+              throw error
+          }
+          
+          //Send values to Controller
+          let storyboard = UIStoryboard(name: "Storyboard", bundle: Bundle(for: self))
+          let viewController = storyboard.instantiateViewController(withIdentifier: "ThreadViewController") as! ThreadViewController
+          viewController.appKey = appKey
+          viewController.options = options
+          viewController.isPush = isPush
+        return viewController
+    }
     /**
         Open BlipChatController with the given apiKey and options
         - Parameter myView: The controller calling the BlipChat
@@ -35,14 +53,16 @@ import UIKit
         viewController.appKey = appKey
         viewController.options = options
         
+    
         if myView.navigationController == nil {
             print("BlipChat Error: " + BlipErrors.emptyNoNavController.errorDescription!)
             throw BlipErrors.emptyNoNavController
         }
+
         myView.navigationController?.pushViewController(viewController, animated: true)
     }
     
-    internal static func validateSdkConfiguration(identifier: String, options:BlipOptions) throws {
+    static func validateSdkConfiguration(identifier: String, options:BlipOptions) throws {
         if identifier.isEmpty {
             throw BlipErrors.emptyApiKey
         }

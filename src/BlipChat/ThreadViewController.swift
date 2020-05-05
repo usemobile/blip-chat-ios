@@ -8,22 +8,24 @@
 
 import UIKit
 import WebKit
-internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIScrollViewDelegate, WKUIDelegate {
+
+public class ThreadViewController: UIViewController, WKNavigationDelegate, UIScrollViewDelegate, WKUIDelegate {
     
     var appKey : String!
     var options : BlipOptions!
     var webView:WKWebView!
     var baseUrl : URL!
     var html : String = ""
-
+    var isPush : Bool = true
+    
     @IBOutlet var progressView: UIProgressView!
     @IBOutlet var baseView: UIView!
     
-    override func viewDidAppear(_ animated: Bool) {
+    override public func viewDidAppear(_ animated: Bool) {
         webView.frame = baseView.frame
     }
     
-    override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
         self.edgesForExtendedLayout = []
         
@@ -36,7 +38,7 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
         view.addSubview(webView)
         
         setProgressView();
-        
+    
         // Add listeners for keyboard
         NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: self.view.window)
         NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: self.view.window)
@@ -53,8 +55,7 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
             resourcesBundle = Bundle(for: type(of: self));
         }
         // Create cancel button
-        let leftArrow = UIImage(named:"leftArrow", in: resourcesBundle, compatibleWith: nil)!;
-        let cancelButton = UIBarButtonItem(image: leftArrow, style: .plain, target: self, action: #selector(ThreadViewController.handleCancel))
+        let cancelButton = UIBarButtonItem(title: "Fechar", style: .plain, target: self, action: #selector(ThreadViewController.handleCancel))
         self.navigationController?.topViewController?.navigationItem.leftBarButtonItem = cancelButton
         self.navigationController?.topViewController?.navigationItem.title = self.options.windowTitle
         
@@ -75,7 +76,7 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
         UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
     }
     
-    override func viewDidLayoutSubviews() {
+    override public func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         webView.frame = baseView.frame
     }
@@ -121,16 +122,20 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
         if self.webView.url != baseUrl {
             self.webView.load(URLRequest(url:URL(string:Constants.BLIP_BLANK_PAGE)!))
         } else {
-            self.navigationController?.popViewController(animated: true)
+            if isPush {
+                self.navigationController?.popViewController(animated: true)
+            } else {
+                self.dismiss(animated: true, completion: nil)
+            }
         }
     }
 
-    override func didReceiveMemoryWarning() {
+    override public func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
     }
     
     ///Delegate to create new webview request (window.open)
-    func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+    public func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                       for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         if navigationAction.targetFrame == nil { // Verify for link
             webView.load(navigationAction.request)
@@ -141,7 +146,7 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
     }
     
     /// Delegate to loading content on WebView
-    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         if navigationAction.targetFrame == nil { // Verify for link
             webView.load(navigationAction.request)
         } else if navigationAction.request.url?.absoluteString == Constants.BLIP_BLANK_PAGE { // Verify for blank page
@@ -151,14 +156,14 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
     }
     
     /// Delegate to prevent scroll on chat webview
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if webView.url == baseUrl {
             scrollView.contentOffset.y = 0
         }
     }
     
     /// Observer to update progressView
-    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath == "estimatedProgress" {
             progressView.progress = Float(webView.estimatedProgress)
             if webView.estimatedProgress == 1.0 {
@@ -180,15 +185,15 @@ internal class ThreadViewController: UIViewController, WKNavigationDelegate, UIS
         view.addConstraint(NSLayoutConstraint(item: view, attribute: .trailing, relatedBy: .equal, toItem: progressView, attribute: .trailing, multiplier: 1.0, constant: 0.0))
     }
     
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         print("BLiP Chat - Finish loading HTML string successfully")
     }
     
-    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+    public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         print("BLiP Chat - Fail navigation: \(error)")
     }
     
-    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+    public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         print("BLiP Chat - Fail provisional navigation: \(error)")
     }
     
