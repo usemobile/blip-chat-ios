@@ -25,6 +25,27 @@ public class ThreadViewController: UIViewController, WKNavigationDelegate, UIScr
         webView.frame = baseView.frame
     }
     
+    public override func willMove(toParent parent: UIViewController?) {
+        super.willMove(toParent: parent)
+        if parent == nil {
+            self.removeObservers()
+        } else {
+            self.registerObservers()
+        }
+    }
+    
+    private func registerObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: self.view.window)
+        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: self.view.window)
+        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardDidHide), name: UIResponder.keyboardDidHideNotification, object: self.view.window)
+    }
+    
+    private func removeObservers() {
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: self.view.window)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: self.view.window)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidHideNotification, object: self.view.window)
+    }
+    
     override public func viewDidLoad() {
         super.viewDidLoad()
         self.edgesForExtendedLayout = []
@@ -40,9 +61,6 @@ public class ThreadViewController: UIViewController, WKNavigationDelegate, UIScr
         setProgressView();
     
         // Add listeners for keyboard
-        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: self.view.window)
-        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: self.view.window)
-        NotificationCenter.default.addObserver(self, selector: #selector(ThreadViewController.keyboardDidHide), name: UIResponder.keyboardDidHideNotification, object: self.view.window)
 
         let frameworkBundle = Bundle(for: ThreadViewController.self);
         //bundleUrl will be found only on cocoapod open source
@@ -90,8 +108,8 @@ public class ThreadViewController: UIViewController, WKNavigationDelegate, UIScr
     @objc func keyboardWillShow(notification: NSNotification) {
         if let keyboardSize = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue {
             let statusBarHeight =  UIApplication.shared.statusBarFrame.height
-            let navBarheight = self.navigationController?.navigationBar.bounds.size.height
-            let height = -keyboardSize.height + statusBarHeight + navBarheight!
+            let navBarheight = self.navigationController?.navigationBar.bounds.size.height ?? 0
+            let height = -keyboardSize.height + statusBarHeight + navBarheight
             self.view.frame.origin.y = height
             
             // Notify about blipchat that keyboard is open
